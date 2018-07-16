@@ -1,0 +1,77 @@
+[package]
+name = "compbio"
+version = "0.1.0"
+authors = ["Brandon Saint-John <bsaintjo@ucsc.edu>"]
+
+[dependencies]
+itertools = "0.7.8"
+ndarray = "0.11.2"
+seq_io = "0.2.4"
+petgraph = "0.4.11"
+log = "0.4"
+env_logger = "0.5.10"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+
+[[bin]]
+name = "shared_motif"
+path = "src/bin/shared_motif.rs"
+
+[[bin]]
+name = "trie-construction"
+path = "src/bin/trie-construction.rs"
+
+[[bin]]
+name = "trie-matching"
+path = "src/bin/trie-matching.rs"
+
+[[bin]]
+name = "suffix-tree"
+path = "src/bin/suffix-tree.rs"
+
+[[bin]]
+name = "suffix-tree-dot"
+path = "src/bin/suffix-tree-dot.rs"
+
+[[bin]]
+name = "gen-suffix-tree-dot"
+path = "src/bin/gen-suffix-tree-dot.rs"
+
+[[bin]]
+name = "longest-repeat"
+path = "src/bin/longest-repeat.rs"
+
+[[bin]]
+name = "longest-shared-substring"
+path = "src/bin/longest-shared-substring.rs"
+
+[[bin]]
+name = "shortest-nonshared-substring"
+path = "src/bin/shortest-nonshared-substring.rs"
+
+[[bin]]
+name = "suffix_array"
+path = "src/bin/suffix_array.rs"
+
+[[bin]]
+name = "suffix_array_cons"
+path = "src/bin/suffix_array_cons.rs"
+
+[[bin]]
+name = "suffix_array_pattern_match"
+path = "src/bin/suffix_array_pattern_match.rs"
+
+[[bin]]
+name = "bwt_cons"
+path = "src/bin/bwt_cons.rs"
+
+[[bin]]
+name = "bwt_inverse"
+path = "src/bin/bwt_inverse.rs"
+
+[[bin]]
+name = "last_to_first_mapping"
+path = "src/bin/last_to_first_mapping.rs"
