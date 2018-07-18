@@ -75,3 +75,7 @@ path = "src/bin/bwt_inverse.rs"
 [[bin]]
 name = "last_to_first_mapping"
 path = "src/bin/last_to_first_mapping.rs"
+
+[[bin]]
+name = "spliced_motif"
+path = "src/bin/spliced_motif.rs"

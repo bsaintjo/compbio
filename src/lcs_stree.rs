@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use std::collections::HashSet;
 
 use petgraph::prelude::*;
-use petgraph::visit::{IntoNodeIdentifiers, EdgeFiltered, EdgeRef, VisitMap, Visitable};
+use petgraph::visit::EdgeRef;
 
 pub struct SuffixTree {
     root: NodeIndex,
@@ -24,13 +24,33 @@ impl SuffixTree {
         self.tree.add_node(HashSet::new())
     }
 
-    pub fn from_suffixes(text: &str) -> Self {
-        let suffixes = suffixes(text);
-        let mut suffix_tree = SuffixTree::empty();
-        for (ident, suffix) in suffixes.enumerate() {
-            suffix_tree.add_pattern(suffix, ident);
+    fn add_node_with_idents(&mut self, hset: HashSet<usize>) -> NodeIndex {
+        self.tree.add_node(hset)
+    }
+
+    pub fn from_str(text: &str) -> Self {
+        let mut stree = SuffixTree::empty();
+        for suffix in suffixes(text) {
+            stree.add_pattern(0, suffix);
         }
-        suffix_tree
+        stree
+    }
+
+    /**
+     * Given a collection of strings, build the corresponding generalized suffix tree.
+     */
+    pub fn from_strings(patts: &[String]) -> Self {
+        let mut stree = SuffixTree::empty();
+        for (ident, patt) in patts.iter().enumerate() {
+            let mut unique = "$".to_owned();
+            unique.push_str(&ident.to_string());
+            let mut patt = patt.clone();
+            patt.push_str(&unique);
+            for suffix in suffixes(&patt) {
+                stree.add_pattern(ident, suffix)
+            }
+        }
+        stree
     }
 
     pub fn longest_common_repeat(&self) -> String {
@@ -41,51 +61,46 @@ impl SuffixTree {
             .unwrap()
     }
 
-    pub fn longest_shared_substring(fst: &str, snd: &str) -> String {
-        let mut stree = SuffixTree::empty();
-        for (ident, suffix) in suffixes(fst).enumerate() {
-            stree.add_pattern(suffix, ident);
-        }
-        for (ident, suffix) in suffixes(snd).enumerate() {
-            stree.add_pattern(suffix, ident);
-        }
+    pub fn longest_shared_substring(&self, n: usize) -> String {
+        let mut curr_node = self.root;
+        let mut acc = String::new();
 
-        let shared = stree.contain_zero_and_one();
-        shared
-            .into_iter()
-            .map(|nidx| stree.acc_to_root(nidx))
-            .max_by_key(|s| s.len())
-            .unwrap()
-    }
-
-    pub fn k_longest_shared_substring(strs: &[&str]) -> String {
-        let mut stree = SuffixTree::empty();
-        for (x, s) in strs.iter().enumerate() {
-            let mut s = s.to_string();
-            let mut unique = "$".to_string();
-            unique.extend(x.to_string().chars());
-            s.extend(unique.chars());
-            for (ident, suffix) in suffixes(&s).enumerate() {
-                eprintln!("{}", suffix);
-                stree.add_pattern(&suffix, ident);
+        while self.tree[curr_node].len() == n {
+            let new_node: Vec<NodeIndex> = self
+                .tree
+                .neighbors(curr_node)
+                .filter(|&nidx| self.tree[nidx].len() == n)
+                .collect();
+            if new_node.is_empty() {
+                break;
+            } else if new_node.len() > 1 {
+                error!("Error in suffix construction");
+            } else {
+                let new_node = new_node[0];
+                let eidx = self.tree.find_edge(curr_node, new_node).unwrap();
+                acc.push_str(&self.tree[eidx]);
+                curr_node = new_node;
             }
         }
+        acc
+    }
 
-        let shared = stree.contain_all(strs.len());
-        shared
-            .into_iter()
-            .map(|nidx| stree.acc_to_root(nidx))
+    pub fn longest_shared_substring2(&self, n: usize) -> String {
+        self.tree()
+            .node_indices()
+            .filter(|&nidx| self.tree[nidx].len() == n)
+            .map(|nidx| self.acc_to_root(nidx).split('$').next().unwrap().to_owned())
             .max_by_key(|s| s.len())
             .unwrap()
     }
 
     pub fn shortest_nonshared_substring(fst: &str, snd: &str) -> String {
         let mut stree = SuffixTree::empty();
-        for (ident, suffix) in suffixes(fst).enumerate() {
-            stree.add_pattern(suffix, ident);
+        for suffix in suffixes(fst) {
+            stree.add_pattern(0, suffix);
         }
-        for (ident, suffix) in suffixes(snd).enumerate() {
-            stree.add_pattern(suffix, ident);
+        for suffix in suffixes(snd) {
+            stree.add_pattern(1, suffix);
         }
 
         stree
@@ -97,13 +112,13 @@ impl SuffixTree {
     }
 
     fn acc_to_root(&self, mut nidx: NodeIndex) -> String {
-        eprintln!("New internal node");
+        debug!("New internal node");
         let mut acc = String::new();
         while self.tree.edges_directed(nidx, Incoming).count() > 0 {
             let eref = self.tree.edges_directed(nidx, Incoming).next().unwrap();
             acc = eref.weight().clone().chars().chain(acc.chars()).collect();
             nidx = eref.source();
-            eprintln!("acc so far, {}", &acc);
+            debug!("acc so far, {}", &acc);
         }
         acc
     }
@@ -119,173 +134,6 @@ impl SuffixTree {
             .node_indices()
             .filter(|&nidx| self.tree.neighbors_directed(nidx, Outgoing).count() > 1)
             .collect::<Vec<NodeIndex>>()
-    }
-
-    fn is_branch(&self, nidx: NodeIndex) -> bool {
-        self.tree.neighbors_directed(nidx, Outgoing).count() > 0
-    }
-
-    fn contain_all(&self, n: usize) -> HashSet<NodeIndex> {
-        let confirmed = self.all_hashset2(n);
-        let mut confirmed = confirmed.into_iter();
-        let init = confirmed.next().unwrap();
-        confirmed.fold(init, |acc, next| &acc & &next)
-    }
-
-    /**
-     * For every node in the tree, check whether all of the subleaves edges contain the unique
-     * identifier. Each node that does fufill this is a possible longest common substring.
-     */
-    fn all_hashset2(&self, n: usize) -> Vec<HashSet<NodeIndex>> {
-        for nidx in self.tree.node_indices() {
-            let mut bfs = Bfs::new(&self.tree, nidx);
-            while let Some(nx) = bfs.next(&self.tree) {
-                for eref in self.tree.edges_directed(nx, Incoming) {
-
-                }
-            }
-        }
-        unimplemented!()
-    }
-
-    /**
-     * Returns Vec<HashSet<NodeIndex>> that contain at $0 .. $n at the end of them. This
-     * function tells you whether that specific node contained the end of the
-     * suffix.
-     */
-    fn all_hashset(&self, n: usize) -> Vec<HashSet<NodeIndex>> {
-        let mut internal: Vec<NodeIndex> = self
-            .tree
-            .externals(Outgoing)
-            .flat_map(|nidx| self.tree.neighbors_directed(nidx, Incoming))
-            .collect();
-        let mut confirmed: Vec<HashSet<NodeIndex>> = (0..n).map(|_| HashSet::new()).collect();
-        let mut vmap = self.tree.visit_map();
-        let mut acc = Vec::new();
-
-        // "$0", "$1", "$2", etc.
-        let ends: Vec<String> = (0..n)
-            .map(|x| {
-                let mut end = "$".to_string();
-                end.extend(x.to_string().chars());
-                end
-            })
-            .collect();
-
-        while !internal.is_empty() {
-            for node in internal {
-                if !vmap.visit(node) {
-                    continue;
-                }
-
-                for neighbor in self.tree.neighbors_directed(node, Outgoing) {
-                    let mut indices: Vec<bool> = (0..n).map(|_| false).collect();
-
-                    // we can look it up since it should have been confirmed already
-                    if self.is_branch(neighbor) {
-                        indices
-                            .iter_mut()
-                            .zip(confirmed.iter())
-                            .for_each(|(idx, hset)| *idx = *idx || hset.contains(&neighbor));
-
-                    // is a leaf, so just check the edges
-                    } else {
-                        let eidx = self.tree.find_edge(node, neighbor).unwrap();
-                        indices
-                            .iter_mut()
-                            .zip(ends.iter())
-                            .for_each(|(idx, end)| *idx = *idx || self.tree[eidx].contains(end));
-                    }
-
-                    indices
-                        .iter()
-                        .zip(confirmed.iter_mut())
-                        .for_each(|(&idx, hset)| {
-                            if idx {
-                                hset.insert(node);
-                            }
-                        });
-                }
-
-                for parent in self.tree.neighbors_directed(node, Incoming) {
-                    if !vmap.is_visited(&parent) {
-                        acc.push(parent);
-                    }
-                }
-            }
-
-            internal = acc;
-            acc = Vec::new();
-        }
-
-        eprintln!("{:?}", confirmed);
-        confirmed
-    }
-
-    /**
-     * Returns 2-tuple of HashSet<NodeIndex> that contain at $0 and $1 at the end of them. This
-     * function tells you whether that specific node contained the end of the
-     * suffix. Useful for SuffixTree built with two patterns. In order to use
-     * this for more than one pattern, use `all_hashset`
-     */
-    fn zero_one_hashset(&self) -> (HashSet<NodeIndex>, HashSet<NodeIndex>) {
-        let mut internal: Vec<NodeIndex> = self
-            .tree
-            .externals(Outgoing)
-            .flat_map(|nidx| self.tree.neighbors_directed(nidx, Incoming))
-            .collect();
-        let mut zero_confirmed: HashSet<NodeIndex> = HashSet::new();
-        let mut one_confirmed: HashSet<NodeIndex> = HashSet::new();
-        let mut vmap = self.tree.visit_map();
-        let mut acc: Vec<NodeIndex> = Vec::new();
-
-        while !internal.is_empty() {
-            for node in internal {
-                if !vmap.visit(node) {
-                    continue;
-                }
-
-                for neighbor in self.tree.neighbors_directed(node, Outgoing) {
-                    let mut one = false;
-                    let mut zero = false;
-
-                    // we can look it up since it should have been confirmed already
-                    if self.is_branch(neighbor) {
-                        zero = zero || zero_confirmed.contains(&neighbor);
-                        one = one || one_confirmed.contains(&neighbor);
-                    // is a leaf, so just check the edges
-                    } else {
-                        let eidx = self.tree.find_edge(node, neighbor).unwrap();
-                        zero = zero || self.tree[eidx].contains("$0");
-                        one = one || self.tree[eidx].contains("$1");
-                    }
-
-                    if one {
-                        one_confirmed.insert(node);
-                    }
-
-                    if zero {
-                        zero_confirmed.insert(node);
-                    }
-                }
-
-                for parent in self.tree.neighbors_directed(node, Incoming) {
-                    if !vmap.is_visited(&parent) {
-                        acc.push(parent);
-                    }
-                }
-            }
-
-            internal = acc;
-            acc = Vec::new();
-        }
-
-        (zero_confirmed, one_confirmed)
-    }
-
-    fn contain_zero_and_one(&self) -> HashSet<NodeIndex> {
-        let (zero_confirmed, one_confirmed) = self.zero_one_hashset();
-        &zero_confirmed & &one_confirmed
     }
 
     fn contain_zero_only(&self) -> Vec<(NodeIndex, EdgeIndex)> {
@@ -309,9 +157,9 @@ impl SuffixTree {
     /** Adds a new string pattern to the suffix tree, adds new nodes and edges as necessary to
      * maintian the suffix tree structure.
      */
-    pub fn add_pattern(&mut self, mut pattern: &str, ident: usize) {
+    pub fn add_pattern(&mut self, ident: usize, mut pattern: &str) {
         let mut curr_node = self.root;
-        eprintln!("Adding pattern: {}", pattern);
+        debug!("Adding pattern: {}", pattern);
         loop {
             if pattern.is_empty() {
                 break;
@@ -321,7 +169,7 @@ impl SuffixTree {
                 .tree
                 .edges(curr_node)
                 .inspect(|eref| {
-                    eprintln!(
+                    debug!(
                         "edge: {}, pattern {} = {:?}",
                         eref.weight(),
                         pattern,
@@ -333,15 +181,15 @@ impl SuffixTree {
             {
                 // Empty graph, initialize with first pattern
                 None | Some((_, Match::None)) => {
-                    eprintln!("Initialization");
+                    debug!("Initialization");
                     self.add_edge(curr_node, pattern, ident);
                     break;
                 }
 
                 // There was an edge with a partial match
                 Some((eidx, Match::Partial(sidx))) => {
-                    eprintln!("Splitting edge");
-                    self.split_edge(eidx, sidx, pattern);
+                    debug!("Splitting edge");
+                    self.split_edge(eidx, sidx, pattern, ident);
                     break;
                 }
 
@@ -350,7 +198,7 @@ impl SuffixTree {
                 // So we move the curr_node to node that the full match points to
                 // and restart
                 Some((eidx, Match::Full)) => {
-                    eprintln!("Adding to already branched node");
+                    debug!("Adding to already branched node");
                     let elen = self.tree[eidx].len();
                     curr_node = self.tree.edge_endpoints(eidx).unwrap().1;
                     self.tree[curr_node].insert(ident);
@@ -360,13 +208,15 @@ impl SuffixTree {
         }
     }
 
-    fn split_edge(&mut self, eidx: EdgeIndex, split_idx: usize, rest: &str) {
+    fn split_edge(&mut self, eidx: EdgeIndex, split_idx: usize, rest: &str, ident: usize) {
         let (prev, next) = self.tree.edge_endpoints(eidx).unwrap();
         let ew = self.tree.remove_edge(eidx).unwrap();
         let (start, end) = ew.split_at(split_idx);
 
-        let internal_idx = self.add_node();
-        let rest_nidx = self.add_node();
+        let mut next_hset = self.tree[next].clone();
+        next_hset.insert(ident);
+        let internal_idx = self.add_node_with_idents(next_hset.clone());
+        let rest_nidx = self.add_node_with_idents(next_hset);
         self.tree.add_edge(prev, internal_idx, String::from(start));
         self.tree.add_edge(internal_idx, next, String::from(end));
         self.tree
@@ -421,7 +271,7 @@ fn match_idx(xs: &str, ys: &str) -> Match {
 }
 
 pub fn suffixes(text: &str) -> Suffixes {
-    Suffixes { text: text, len: 0 }
+    Suffixes { text, len: 0 }
 }
 
 pub struct Suffixes<'a> {
@@ -445,6 +295,8 @@ impl<'a> Iterator for Suffixes<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use petgraph::dot::Dot;
+    use utils;
 
     #[test]
     fn test_match_idx() {
@@ -476,23 +328,6 @@ mod tests {
     }
 
     #[test]
-    fn test_subtree_edge_indices() {
-        let mut stree = SuffixTree::empty();
-        for suffix in suffixes("A$0").take(1).enumerate() {
-            stree.add_pattern(suffix, ident);
-        }
-        for suffix in suffixes("B$1").take(1).enumerate() {
-            stree.add_pattern(suffix, ident);
-        }
-        let answer = stree
-            .contain_zero_and_one()
-            .into_iter()
-            .collect::<Vec<NodeIndex>>();
-        assert!(answer.len() == 1);
-        assert_eq!(answer.into_iter().next().unwrap(), NodeIndex::from(0));
-    }
-
-    #[test]
     fn test_add_one_character() {
         let mut xs = String::from("abc");
         let ys = "xyz";
@@ -502,11 +337,12 @@ mod tests {
 
     #[test]
     fn test_k_longest_shared_substring() {
-        let xs = "ABABC";
-        let ys = "BABCA";
-        let zs = "ABCBA";
-        let strs: &[&str] = &[xs, ys, zs];
-        let answer = SuffixTree::k_longest_shared_substring(strs);
-        assert_eq!("ABC".to_owned(), answer);
+        let xs = "ABABC".to_owned();
+        let ys = "BABCA".to_owned();
+        let zs = "ABCBA".to_owned();
+        let strs: &[String] = &[xs, ys, zs];
+        let answer = SuffixTree::from_strings(strs);
+        utils::write_tree_to_dot("test.dot", &answer);
+        assert_eq!("ABC".to_owned(), answer.longest_shared_substring2(3));
     }
 }

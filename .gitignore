@@ -2,3 +2,7 @@
 **/*.rs.bk
 Cargo.lock
 *~
+*swp
+answer.txt
+test.dot
+test.pdf

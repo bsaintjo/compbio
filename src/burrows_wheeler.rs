@@ -93,7 +93,7 @@ pub fn uniq_count(text: &str) -> UniqCount {
     let text_iter = text.chars();
     let hmap = HashMap::new();
     UniqCount {
-        text_iter: text_iter,
+        text_iter,
         seen: hmap,
     }
 }
