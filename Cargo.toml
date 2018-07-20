@@ -7,8 +7,8 @@ authors = ["Brandon Saint-John <bsaintjo@ucsc.edu>"]
 itertools = "0.7.8"
 ndarray = "0.11.2"
 seq_io = "0.2.4"
-petgraph = "0.4.11"
-log = "0.4"
+petgraph = "0.4.12"
+log = "0.4.3"
 env_logger = "0.5.10"
 
 [profile.release]
@@ -79,3 +79,7 @@ path = "src/bin/last_to_first_mapping.rs"
 [[bin]]
 name = "spliced_motif"
 path = "src/bin/spliced_motif.rs"
+
+[[bin]]
+name = "shared_spliced_motif"
+path = "src/bin/shared_spliced_motif.rs"

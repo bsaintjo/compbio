@@ -28,14 +28,6 @@ impl SuffixTree {
         self.tree.add_node(hset)
     }
 
-    pub fn from_str(text: &str) -> Self {
-        let mut stree = SuffixTree::empty();
-        for suffix in suffixes(text) {
-            stree.add_pattern(0, suffix);
-        }
-        stree
-    }
-
     /**
      * Given a collection of strings, build the corresponding generalized suffix tree.
      */

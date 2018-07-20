@@ -3,7 +3,6 @@ extern crate itertools;
 extern crate seq_io;
 
 use compbio::splicing;
-use itertools::Itertools;
 use seq_io::fasta::Reader;
 use std::io;
 
@@ -16,6 +15,6 @@ fn main() {
 
     let target = &seqs[0];
     let query = &seqs[1];
-    let smotif = splicing::spliced_motif(target, query);
-    println!("{}", smotif.iter().join(" "));
+    let ssmotif = splicing::shared_spliced_motif(target, query);
+    println!("{}", ssmotif);
 }
