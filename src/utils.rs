@@ -1,10 +1,10 @@
 use petgraph::dot::Dot;
 
+use crate::lcs_stree;
+use crate::suffix_tree;
 use itertools::Itertools;
-use lcs_stree;
 use std::fs::File;
 use std::io::Write;
-use suffix_tree;
 
 pub fn u8_to_string(x: &[u8]) -> String {
     String::from_utf8(Vec::from(x)).unwrap()

@@ -4,6 +4,8 @@ use std::collections::HashSet;
 use petgraph::prelude::*;
 use petgraph::visit::EdgeRef;
 
+use log::{debug, error, log};
+
 pub struct SuffixTree {
     root: NodeIndex,
     tree: Graph<HashSet<usize>, String>,
@@ -287,8 +289,7 @@ impl<'a> Iterator for Suffixes<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use petgraph::dot::Dot;
-    use utils;
+    use crate::utils;
 
     #[test]
     fn test_match_idx() {

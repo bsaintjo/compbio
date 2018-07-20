@@ -1,7 +1,7 @@
+use crate::suffix_array;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::str::Chars;
-use suffix_array;
 
 pub struct BWT {
     pub bwt: String,

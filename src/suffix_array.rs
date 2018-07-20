@@ -1,4 +1,4 @@
-use suffix_tree;
+use crate::suffix_tree;
 
 pub struct SuffixArray {
     text: String,

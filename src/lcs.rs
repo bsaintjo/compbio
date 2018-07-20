@@ -1,4 +1,4 @@
-use itertools::Itertools;
+use itertools::{iproduct, Itertools};
 use ndarray::{Array2, ArrayD, IntoDimension};
 use std::collections::HashMap;
 

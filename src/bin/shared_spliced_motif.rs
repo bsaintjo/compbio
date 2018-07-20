@@ -1,8 +1,4 @@
-extern crate compbio;
-extern crate itertools;
-extern crate seq_io;
-
-use compbio::splicing;
+use compbio::lcs_splicing_tb;
 use seq_io::fasta::Reader;
 use std::io;
 
@@ -15,6 +11,7 @@ fn main() {
 
     let target = &seqs[0];
     let query = &seqs[1];
-    let ssmotif = splicing::shared_spliced_motif(target, query);
-    println!("{}", ssmotif);
+    let tbm = lcs_splicing_tb::longest_common_subsequence(target, query);
+    let ssmotif = lcs_splicing_tb::trace(target, query, &tbm);
+    println!("{}", ssmotif.iter().next().unwrap());
 }
