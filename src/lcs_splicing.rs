@@ -22,7 +22,7 @@ pub fn longest_common_subsequence(fst: &[u8], snd: &[u8]) -> HashSet<String> {
         if i == 0 || j == 0 {
             lcs_hmap.insert((i, j), empty_hset());
         } else if fst[i - 1] == snd[j - 1] {
-            let mut prev = match lcs_hmap.get(&(i - 1, j - 1)) {
+            let prev = match lcs_hmap.get(&(i - 1, j - 1)) {
                 Some(s) => s.clone(),
                 None => empty_hset(),
             };
@@ -32,14 +32,13 @@ pub fn longest_common_subsequence(fst: &[u8], snd: &[u8]) -> HashSet<String> {
                 .map(|mut pat| {
                     pat.push(fst[i - 1] as char);
                     pat
-                })
-                .collect();
+                }).collect();
             lcs_hmap.insert((i, j), prev);
         } else {
-            let mut left = lcs_hmap
+            let left = lcs_hmap
                 .get(&(i - 1, j))
                 .map_or(empty_hset(), |s| s.clone());
-            let mut right = lcs_hmap
+            let right = lcs_hmap
                 .get(&(i, j - 1))
                 .map_or(empty_hset(), |s| s.clone());
             let longer = left

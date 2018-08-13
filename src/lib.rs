@@ -2,6 +2,7 @@
 
 pub mod burrows_wheeler;
 pub mod edit;
+pub mod glob;
 pub mod lcs;
 pub mod lcs_splicing;
 pub mod lcs_splicing_tb;

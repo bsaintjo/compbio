@@ -138,8 +138,6 @@ mod tests {
         let snd = b"GAC";
         let tbm = longest_common_subsequence(fst, snd);
         let actual = trace(fst, snd, &tbm);
-        assert!(
-            vec!["AC".to_owned(), "GC".to_owned(), "GA".to_owned()].contains(&actual[0])
-        );
+        assert!(vec!["AC".to_owned(), "GC".to_owned(), "GA".to_owned()].contains(&actual[0]));
     }
 }

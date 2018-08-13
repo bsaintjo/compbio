@@ -13,6 +13,7 @@ seq_io = "0.2.4"
 petgraph = "0.4.12"
 log = "0.4.3"
 env_logger = "0.5.10"
+bio = "0.21.0"
 
 [profile.release]
 opt-level = 3
@@ -86,3 +87,11 @@ path = "src/bin/spliced_motif.rs"
 [[bin]]
 name = "shared_spliced_motif"
 path = "src/bin/shared_spliced_motif.rs"
+
+[[bin]]
+name = "edit_distance"
+path = "src/bin/edit_distance.rs"
+
+[[bin]]
+name = "edit_distance_alignment"
+path = "src/bin/edit_distance_alignment.rs"
