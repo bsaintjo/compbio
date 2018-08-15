@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-use bio::scores::blosum62;
+use bio::scores::pam250;
 use itertools::iproduct;
 use log::{info, log};
 
@@ -75,60 +75,43 @@ impl Cell {
 
 type AlignmentMatrix = HashMap<(usize, usize), Cell>;
 
-pub struct GlobalAlignment {
-    fst: Vec<u8>,
-    snd: Vec<u8>,
+pub struct Builder<'a> {
+    fst: &'a [u8],
+    snd: &'a [u8],
     linear_gap_penalty: isize,
-    mat: AlignmentMatrix,
 }
 
-impl GlobalAlignment {
-    pub fn new(fst: Vec<u8>, snd: Vec<u8>) -> Self {
-        let mut mat = HashMap::new();
-        let linear_gap_penalty = -5isize;
-        mat.insert((0, 0), Cell::new(0));
-
-        for idx in 1..=fst.len() {
-            mat.insert(
-                (idx, 0usize),
-                Cell::new_with_dir(idx as isize * linear_gap_penalty, Direction::left()),
-            );
-        }
-
-        for idx in 1..=snd.len() {
-            mat.insert(
-                (0usize, idx),
-                Cell::new_with_dir(idx as isize * linear_gap_penalty, Direction::top()),
-            );
-        }
-
-        GlobalAlignment {
+impl<'a> Builder<'a> {
+    pub fn new(fst: &'a [u8], snd: &'a [u8], linear_gap_penalty: isize) -> Self {
+        Builder {
             fst,
             snd,
             linear_gap_penalty,
-            mat,
         }
     }
 
-    fn insert(&mut self, idxs: (usize, usize), cell: Cell) {
-        self.mat.insert(idxs, cell);
+    fn initialize_alignment_matrix(&self) -> AlignmentMatrix {
+        let mut mat = HashMap::new();
+        mat.insert((0, 0), Cell::new(0));
+
+        for idx in 1..=self.fst.len() {
+            mat.insert(
+                (idx, 0usize),
+                Cell::new_with_dir(idx as isize * self.linear_gap_penalty, Direction::left()),
+            );
+        }
+
+        for idx in 1..=self.snd.len() {
+            mat.insert(
+                (0usize, idx),
+                Cell::new_with_dir(idx as isize * self.linear_gap_penalty, Direction::top()),
+            );
+        }
+        mat
     }
 
-    fn mat_idx(&self, fst_idx: usize, snd_idx: usize) -> isize {
-        self.cell_idx(fst_idx, snd_idx).score()
-    }
-
-    fn cell_idx(&self, fst_idx: usize, snd_idx: usize) -> &Cell {
-        &self.mat[&(fst_idx, snd_idx)]
-    }
-
-    fn scoring_matrix(&self, fst_idx: usize, snd_idx: usize) -> isize {
-        let fst_char = self.fst[fst_idx - 1];
-        let snd_char = self.snd[snd_idx - 1];
-        blosum62::blosum62(fst_char, snd_char) as isize
-    }
-
-    pub fn align(&mut self) {
+    pub fn align(&self) -> LocalAlignment {
+        let mut mat = self.initialize_alignment_matrix();
         let indices = iproduct![1..=self.fst.len(), 1..=self.snd.len()];
         for (fst_idx, snd_idx) in indices {
             info!(
@@ -136,16 +119,16 @@ impl GlobalAlignment {
                 fst_idx, snd_idx
             );
             info!("Indexing top cell at pos {}, {}", fst_idx - 1, snd_idx);
-            let top = self.mat_idx(fst_idx - 1, snd_idx) + self.linear_gap_penalty;
+            let top = Builder::score_idx(fst_idx - 1, snd_idx, &mat) + self.linear_gap_penalty;
             info!("Indexing left cell at pos {}, {}", fst_idx, snd_idx - 1);
-            let left = self.mat_idx(fst_idx, snd_idx - 1) + self.linear_gap_penalty;
+            let left = Builder::score_idx(fst_idx, snd_idx - 1, &mat) + self.linear_gap_penalty;
             info!(
                 "Indexing top left cell at pos {}, {}",
                 fst_idx - 1,
                 snd_idx - 1
             );
-            let matching =
-                self.mat_idx(fst_idx - 1, snd_idx - 1) + self.scoring_matrix(fst_idx, snd_idx);
+            let matching = Builder::score_idx(fst_idx - 1, snd_idx - 1, &mat)
+                + self.scoring_matrix(fst_idx, snd_idx);
             let cell_result = Cell::from_cell_max(&[
                 (top, Direction::Top),
                 (left, Direction::Left),
@@ -157,22 +140,43 @@ impl GlobalAlignment {
                 fst_idx,
                 snd_idx
             );
-            self.insert((fst_idx, snd_idx), cell_result);
+            Builder::insert((fst_idx, snd_idx), cell_result, &mut mat);
         }
+        let (fst_aligned, snd_aligned) = self.traceback(&mat);
+        let max_score = self.maximum_alignment_score(&mat);
+        LocalAlignment::new(fst_aligned, snd_aligned, mat, max_score)
     }
 
-    pub fn maximum_alignment_score(&self) -> isize {
-        self.mat_idx(self.fst.len(), self.snd.len())
+    fn insert(idxs: (usize, usize), cell: Cell, mat: &mut AlignmentMatrix) {
+        mat.insert(idxs, cell);
     }
 
-    pub fn traceback(&self) -> (Vec<u8>, Vec<u8>) {
+    fn scoring_matrix(&self, fst_idx: usize, snd_idx: usize) -> isize {
+        let fst_char = self.fst[fst_idx - 1];
+        let snd_char = self.snd[snd_idx - 1];
+        pam250::pam250(fst_char, snd_char) as isize
+    }
+
+    fn score_idx(fst_idx: usize, snd_idx: usize, mat: &AlignmentMatrix) -> isize {
+        Builder::cell_idx(fst_idx, snd_idx, mat).score()
+    }
+
+    fn cell_idx<'b>(fst_idx: usize, snd_idx: usize, mat: &'b AlignmentMatrix) -> &'b Cell {
+        &mat[&(fst_idx, snd_idx)]
+    }
+
+    fn maximum_alignment_score(&self, mat: &AlignmentMatrix) -> isize {
+        unimplemented!()
+    }
+
+    fn traceback(&self, mat: &AlignmentMatrix) -> (Vec<u8>, Vec<u8>) {
         let mut pos = (self.fst.len(), self.snd.len());
         // TODO Use VecDeque instead to add letters in the correct order
         let mut fst_align = Vec::new();
         let mut snd_align = Vec::new();
 
         while pos.0 != 0 || pos.1 != 0 {
-            match self.cell_idx(pos.0, pos.1).get_any_dir() {
+            match Builder::cell_idx(pos.0, pos.1, mat).get_any_dir() {
                 Direction::Top => {
                     fst_align.push(b'-');
                     snd_align.push(self.snd[pos.1 - 1]);
@@ -192,5 +196,28 @@ impl GlobalAlignment {
             }
         }
         (fst_align, snd_align)
+    }
+}
+
+pub struct LocalAlignment {
+    pub fst_aligned: Vec<u8>,
+    pub snd_aligned: Vec<u8>,
+    pub max_score: isize,
+    mat: AlignmentMatrix,
+}
+
+impl LocalAlignment {
+    fn new(
+        fst_aligned: Vec<u8>,
+        snd_aligned: Vec<u8>,
+        mat: AlignmentMatrix,
+        max_score: isize,
+    ) -> Self {
+        LocalAlignment {
+            fst_aligned,
+            snd_aligned,
+            mat,
+            max_score,
+        }
     }
 }

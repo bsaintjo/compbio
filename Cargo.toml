@@ -95,3 +95,11 @@ path = "src/bin/edit_distance.rs"
 [[bin]]
 name = "edit_distance_alignment"
 path = "src/bin/edit_distance_alignment.rs"
+
+[[bin]]
+name = "global_alignment"
+path = "src/bin/global_alignment.rs"
+
+[[bin]]
+name = "local_alignment"
+path = "src/bin/local_alignment.rs"

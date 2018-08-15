@@ -7,6 +7,7 @@ pub mod lcs;
 pub mod lcs_splicing;
 pub mod lcs_splicing_tb;
 pub mod lcs_stree;
+pub mod local;
 pub mod splicing;
 pub mod suffix_array;
 pub mod suffix_tree;
