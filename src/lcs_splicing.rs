@@ -32,7 +32,8 @@ pub fn longest_common_subsequence(fst: &[u8], snd: &[u8]) -> HashSet<String> {
                 .map(|mut pat| {
                     pat.push(fst[i - 1] as char);
                     pat
-                }).collect();
+                })
+                .collect();
             lcs_hmap.insert((i, j), prev);
         } else {
             let left = lcs_hmap

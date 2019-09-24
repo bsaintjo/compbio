@@ -21,7 +21,8 @@ fn main() {
         .flat_map(|pattern| {
             let (left, right) = sarray.pattern_match(&pattern).unwrap();
             sarray.index_array()[left..=right].iter().cloned()
-        }).collect();
+        })
+        .collect();
     idxs.sort();
     println!("{}", idxs.iter().join(" "));
 }

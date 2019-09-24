@@ -208,7 +208,8 @@ impl SuffixTree {
                 } else {
                     None
                 }
-            }).collect()
+            })
+            .collect()
     }
 
     pub fn add_pattern(&mut self, mut pattern: &str) {
@@ -229,7 +230,8 @@ impl SuffixTree {
                         pattern,
                         match_idx(pattern, eref.weight())
                     )
-                }).map(|eref| (eref.id(), match_idx(pattern, eref.weight())))
+                })
+                .map(|eref| (eref.id(), match_idx(pattern, eref.weight())))
                 .max_by_key(|&(_, m)| m)
             {
                 // Empty graph, initialize with first pattern

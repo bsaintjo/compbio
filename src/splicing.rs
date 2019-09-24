@@ -3,7 +3,7 @@ use itertools::Itertools;
 pub fn spliced_motif(target: &[u8], mut query: &[u8]) -> Vec<usize> {
     let mut acc = Vec::new();
 
-    let idx_target = target.iter().zip(1..target.len() + 1);
+    let idx_target = target.iter().zip(1..=target.len());
     for (&ch, idx) in idx_target {
         if ch == query[0] {
             acc.push(idx);
@@ -18,7 +18,7 @@ pub fn spliced_motif(target: &[u8], mut query: &[u8]) -> Vec<usize> {
 }
 
 fn spliced(pattern: &[u8]) -> impl Iterator<Item = &[u8]> {
-    (1..pattern.len() + 1).flat_map(move |len| pattern.windows(len))
+    (1..=pattern.len()).flat_map(move |len| pattern.windows(len))
 }
 
 pub fn shared_spliced_motif(target: &[u8], query: &[u8]) -> String {

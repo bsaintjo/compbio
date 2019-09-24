@@ -3,7 +3,7 @@ use std::collections::HashSet;
 
 use bio::scores::blosum62;
 use itertools::iproduct;
-use log::{info, log};
+use log::info;
 
 #[derive(Hash, Eq, PartialEq, Clone, Copy)]
 enum Direction {
@@ -69,7 +69,7 @@ impl Cell {
     }
 
     fn get_any_dir(&self) -> Direction {
-        self.dirs.iter().next().unwrap().clone()
+        *self.dirs.iter().next().unwrap()
     }
 }
 

@@ -20,7 +20,8 @@ impl BWT {
                     } else {
                         &sarray.text()[idx - 1..idx]
                     }
-                }).collect(),
+                })
+                .collect(),
         }
     }
 

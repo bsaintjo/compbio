@@ -3,7 +3,7 @@ use std::collections::HashSet;
 
 use bio::scores::pam250;
 use itertools::iproduct;
-use log::{info, log};
+use log::info;
 
 #[derive(Hash, Eq, PartialEq, Clone, Copy)]
 enum Direction {
@@ -69,7 +69,7 @@ impl Cell {
     }
 
     fn get_any_dir(&self) -> Direction {
-        self.dirs.iter().next().unwrap().clone()
+        *self.dirs.iter().next().unwrap()
     }
 }
 
@@ -161,7 +161,7 @@ impl<'a> Builder<'a> {
         Builder::cell_idx(fst_idx, snd_idx, mat).score()
     }
 
-    fn cell_idx<'b>(fst_idx: usize, snd_idx: usize, mat: &'b AlignmentMatrix) -> &'b Cell {
+    fn cell_idx(fst_idx: usize, snd_idx: usize, mat: &AlignmentMatrix) -> &Cell {
         &mat[&(fst_idx, snd_idx)]
     }
 

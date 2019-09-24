@@ -4,7 +4,7 @@ use std::collections::HashSet;
 use petgraph::prelude::*;
 use petgraph::visit::EdgeRef;
 
-use log::{debug, error, log};
+use log::{debug, error};
 
 pub struct SuffixTree {
     root: NodeIndex,
@@ -144,7 +144,8 @@ impl SuffixTree {
                 } else {
                     None
                 }
-            }).collect()
+            })
+            .collect()
     }
 
     /** Adds a new string pattern to the suffix tree, adds new nodes and edges as necessary to
@@ -168,7 +169,8 @@ impl SuffixTree {
                         pattern,
                         match_idx(pattern, eref.weight())
                     )
-                }).map(|eref| (eref.id(), match_idx(pattern, eref.weight())))
+                })
+                .map(|eref| (eref.id(), match_idx(pattern, eref.weight())))
                 .max_by_key(|&(_, m)| m)
             {
                 // Empty graph, initialize with first pattern

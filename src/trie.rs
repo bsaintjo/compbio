@@ -82,7 +82,8 @@ impl Trie {
             } else {
                 None
             }
-        }).enumerate();
+        })
+        .enumerate();
         for (i, s) in slices {
             if self.prefix_trie_matching(s) {
                 acc.push(i)

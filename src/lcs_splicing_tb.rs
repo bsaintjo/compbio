@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-use log::{debug, log};
+use log::debug;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 enum TB {

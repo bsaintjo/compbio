@@ -1,5 +1,3 @@
-cargo-features = ["edition"]
-
 [package]
 name = "compbio"
 version = "0.1.0"
@@ -103,3 +101,7 @@ path = "src/bin/global_alignment.rs"
 [[bin]]
 name = "local_alignment"
 path = "src/bin/local_alignment.rs"
+
+[[bin]]
+name = "orf_finder"
+path = "src/bin/orf.rs"
