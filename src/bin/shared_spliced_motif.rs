@@ -13,5 +13,5 @@ fn main() {
     let query = &seqs[1];
     let tbm = lcs_splicing_tb::longest_common_subsequence(target, query);
     let ssmotif = lcs_splicing_tb::trace(target, query, &tbm);
-    println!("{}", ssmotif.iter().next().unwrap());
+    println!("{}", ssmotif.first().unwrap());
 }

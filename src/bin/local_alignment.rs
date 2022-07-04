@@ -1,6 +1,5 @@
 use compbio::local;
 use compbio::utils;
-use env_logger;
 use seq_io::fasta::Reader;
 use std::io;
 
