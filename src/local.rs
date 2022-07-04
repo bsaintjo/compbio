@@ -165,7 +165,7 @@ impl<'a> Builder<'a> {
         &mat[&(fst_idx, snd_idx)]
     }
 
-    fn maximum_alignment_score(&self, mat: &AlignmentMatrix) -> isize {
+    fn maximum_alignment_score(&self, _mat: &AlignmentMatrix) -> isize {
         unimplemented!()
     }
 

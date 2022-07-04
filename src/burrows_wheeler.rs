@@ -175,5 +175,4 @@ mod tests {
         let tfed = BWT::new(text.clone());
         assert_eq!(text, tfed.invert());
     }
-
 }

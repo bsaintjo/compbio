@@ -1,7 +1,7 @@
-use std::io;
 use compbio::orf;
 use compbio::utils;
 use seq_io::fasta::Reader;
+use std::io;
 
 pub fn main() {
     env_logger::init();

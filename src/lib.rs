@@ -7,6 +7,7 @@ pub mod lcs_splicing_tb;
 pub mod lcs_stree;
 pub mod local;
 pub mod orf;
+mod perfect_matchings_rna;
 pub mod splicing;
 pub mod suffix_array;
 pub mod suffix_tree;
