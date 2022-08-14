@@ -12,6 +12,7 @@ petgraph = "0.6.2"
 log = "0.4.3"
 env_logger = "0.9.0"
 bio = "0.41.0"
+factorial = "0.2.1"
 
 [profile.release]
 opt-level = 3
@@ -105,3 +106,7 @@ path = "src/bin/local_alignment.rs"
 [[bin]]
 name = "orf_finder"
 path = "src/bin/orf.rs"
+
+[[bin]]
+name = "perfect_matchings_rna"
+path = "src/bin/perfect_matchings_rna.rs"
